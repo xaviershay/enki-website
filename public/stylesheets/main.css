@@ -1,3 +1,9 @@
+p.warning {
+  border: solid 1px red;
+  background-color: #ffeeee;
+  padding: 5px;
+}
+
 /* High level containers */
 body 
 { 
