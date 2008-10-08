@@ -18,25 +18,27 @@ DONE
  - Archives
  - Unpack gems
  - Register domain name
+ - Setup website
+ - Add exception_notification plugin
+ - Investigate OpenID comments in session not working correctly
+ - Page titles for /pages/ID
+ - 404 invalid tags (/arsrsts)
+ - Fixup invalid images in admin
+ - Fix N+1 queries
+ - Indexes
+ - Release mephisto importer (http://gitorious.org/projects/enki-translator)
+ - Investigate rails OpenID and add tests
+ - Move defensio to a branch (see rhnh repo)
+ - Move OpenID nonces to DB
 
-TODO now
- * Setup webpage
- * Intro documentation
- * Investigate OpenID comments in session
+TODO now/half done
+ - API
+ - Admin Tests
 
-TODO later
- * Release mephisto importer
+TODO later (in rough order of priority)
+ * Store timestamps in UTC, make timezone configurable
  * Timestamped migrations
  * Consistent specs (no should)
- * Admin Tests
- * Move OpenID nonces to DB
- * Investigate rails OpenID and add tests
- * Fix N+1 queries
- * Indexes
- * 404 invalid tags (/arsrsts)
- * Store timestamps in UTC, make timezone configurable
- * Move defensio to a branch
  * Live preview for composition
  * Humanized reading
- * API
- * Offline comment checking
+ * Better documentation

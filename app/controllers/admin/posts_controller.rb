@@ -1,36 +1,81 @@
 class Admin::PostsController < Admin::BaseController
-  make_resourceful do
-    actions :all
+  before_filter :find_post, :only => [:show, :update, :destroy]
 
-    response_for(:create) do
-      redirect_to(:action => 'edit', :id => @post)
+  def index
+    respond_to do |format|
+      format.html {
+        @posts = Post.paginate(
+          :order => "created_at DESC",
+          :page  => params[:page]
+        )
+      }
     end
+  end
 
-    after(:create) do
-      flash[:notice] = "Post created"
+  def create
+    @post = Post.new(params[:post])
+    if @post.save
+      respond_to do |format|
+        format.html {
+          flash[:notice] = "Created post '#{@post.title}'"
+          redirect_to(:action => 'show', :id => @post)
+        }
+      end
+    else
+      respond_to do |format|
+        format.html { render :action => 'new',         :status => :unprocessable_entity }
+      end
     end
-
-    after(:update) do
-      flash[:notice] = "Post updated"
+  end
+  
+  def update
+    if @post.update_attributes(params[:post])
+      respond_to do |format|
+        format.html {
+          flash[:notice] = "Updated post '#{@post.title}'"
+          redirect_to(:action => 'show', :id => @post)
+        }
+      end
+    else
+      respond_to do |format|
+        format.html { render :action => 'show',        :status => :unprocessable_entity }
+      end
     end
+  end
 
-    response_for(:update) do
-      redirect_to(:action => 'edit', :id => @post)
+  def show
+    respond_to do |format|
+      format.html {
+        render :partial => 'post', :locals => {:post => @post} if request.xhr?
+      }
+    end
+  end
+
+  def new
+    @post = Post.new
+  end
+
+  def destroy
+    undo_item = @post.destroy_with_undo
+
+    respond_to do |format|
+      format.html do
+        flash[:notice] = "Deleted post '#{@post.title}'"
+        redirect_to :action => 'index' 
+      end
+      format.json { 
+        render :json => {
+          :undo_path    => undo_admin_undo_item_path(undo_item),
+          :undo_message => undo_item.description,
+          :post         => @post
+        }.to_json
+      }
     end
   end
 
   protected
 
-  def current_objects
-    @current_object ||= current_model.paginate(
-      :order => "created_at DESC", 
-      :page => params[:page] 
-    )
-  end
-
-  def build_object
-    @current_object = Post.new(object_parameters) do |post|
-      post.published_at = Time.now
-    end
+  def find_post
+    @post = Post.find(params[:id])
   end
 end

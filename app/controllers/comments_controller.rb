@@ -4,11 +4,13 @@ class CommentsController < ApplicationController
   before_filter :find_post, :except => [:new]
 
   def index
-    if request.post? || openid_completion?(request)
+    if request.post? || using_open_id?
       create
     else
-      #TODO: Comments#index
-      @comments = @post.approved_comments
+      respond_to do |format|
+        format.html { redirect_to(post_path(@post)) }
+        format.atom { @comments = @post.approved_comments }
+      end
     end
   end
 
@@ -23,36 +25,39 @@ class CommentsController < ApplicationController
   end
 
   def create
-    @comment = session[:pending_comment] || Comment.new((params[:comment] || {}).reject {|key, value| !Comment.protected_attribute?(key) })
+    @comment = Comment.new((session[:pending_comment] || params[:comment] || {}).reject {|key, value| !Comment.protected_attribute?(key) })
     @comment.post = @post
 
     session[:pending_comment] = nil
 
     if @comment.requires_openid_authentication?
-      begin
-        sreg_extension = OpenID::SReg::Request.new(['fullname'], ['email'])
+      session[:pending_comment] = params[:comment]
+      return if authenticate_with_open_id(@comment.author, 
+          :optional => [:nickname, :fullname, :email]
+        ) do |result, identity_url, registration|
 
-        return if open_id_authenticate(
-          @comment.author, 
-          :before_redirect => lambda { session[:pending_comment] = @comment },
-          :extensions      => [sreg_extension]
-        ) do |response|
-          open_id_fields = response.extension_response(sreg_extension.ns_uri, false)
-
+        case result.status
+        when :missing
+          @comment.openid_error = "Sorry, the OpenID server couldn't be found"
+        when :canceled
+          @comment.openid_error = "OpenID verification was canceled"
+        when :failed
+          @comment.openid_error = "Sorry, the OpenID verification failed"
+        when :successful
           @comment.post = @post
 
           @comment.author_url              = @comment.author
-          @comment.author                  = open_id_fields["fullname"].to_s
-          @comment.author_email            = open_id_fields["email"].to_s
-          @comment.author_openid_authority = response.endpoint.server_url
+          @comment.author                  = (registration["fullname"] || registration["nickname"] || @comment.author_url).to_s
+          @comment.author_email            = registration["email"].to_s
+          @comment.author_openid_authority = result.server_url 
 
           @comment.openid_error = ""
         end
-      rescue OpenID::DiscoveryFailure
-        @comment.openid_error = "Unable to find OpenID server for <q>#{@comment.author}</q>"
-      rescue HyperOpenID::AuthenticationFailure
-        @comment.openid_error = "Could not authenticate <q>#{@comment.author}</q>"
+
+        session[:pending_comment] = nil
       end
+    else
+      @comment.blank_openid_fields
     end
 
     if @comment.save

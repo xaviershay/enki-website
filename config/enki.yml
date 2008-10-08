@@ -3,4 +3,5 @@ url:   http://enkiblog.com
 author: 
   name:    Xavier Shay
   email:   xavier@rhnh.net
-  open_id: http://rhnh.net/
+  open_id: 
+    - http://rhnh.net/

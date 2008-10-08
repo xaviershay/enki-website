@@ -1,4 +1,6 @@
 class Comment < ActiveRecord::Base
+  DEFAULT_LIMIT = 15
+
   class << self  
     def protected_attribute?(attribute)
       [:author, :body].include?(attribute.to_sym)
@@ -10,8 +12,10 @@ class Comment < ActiveRecord::Base
 
   belongs_to :post
 
-  before_save :apply_filter
-  after_save  :denormalize
+  before_save   :apply_filter
+
+  after_save    :denormalize
+  after_destroy :denormalize
 
   validates_presence_of :author
   validates_presence_of :body
@@ -29,6 +33,12 @@ class Comment < ActiveRecord::Base
       self.body,
       :code_formatter => Lesstile::CodeRayFormatter
     )
+  end
+  
+  def blank_openid_fields
+    self.author_openid_authority = ""
+    self.author_url = ""
+    self.author_email = ""
   end
 
   def requires_openid_authentication?
@@ -51,6 +61,15 @@ class Comment < ActiveRecord::Base
     self.post.denormalize_comments_count!
   end
 
+  def destroy_with_undo
+    undo_item = nil
+    transaction do
+      self.destroy
+      undo_item = DeleteCommentUndo.create_undo(self)
+    end
+    undo_item
+  end
+
   # Delegates
   def post_title
     post.title
@@ -67,6 +86,14 @@ class Comment < ActiveRecord::Base
         comment.author = "Your OpenID Name"
       end
       comment
+    end
+
+    def find_recent(args = {})
+      options = { 
+        :limit => DEFAULT_LIMIT,
+        :order => 'created_at DESC'
+      }.merge(args)
+      find(:all, options)
     end
   end
 end

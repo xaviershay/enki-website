@@ -56,6 +56,13 @@ describe Comment do
     @comment.denormalize
   end
 
+  it "asks post to update it's comment counter after destroy" do
+    @comment.class.after_destroy.include?(:denormalize).should == true
+    @comment.post = mock_model(Post)
+    @comment.post.should_receive(:denormalize_comments_count!)
+    @comment.denormalize
+  end
+
   it "applies a Lesstile filter to body and store it in body_html before save" do
     @comment.class.before_save.include?(:apply_filter).should == true
     Lesstile.should_receive(:format_as_xhtml).and_return("formatted")
@@ -78,6 +85,17 @@ describe Comment do
 
   # TODO: acts_as_defensio_comment tests
   # TODO: OpenID error model
+end
+
+describe Comment, '#blank_openid_fields_if_unused' do
+  before(:each) do
+    @comment = Comment.new
+    @comment.blank_openid_fields
+  end
+
+  it('blanks out author_openid_authority') { @comment.author_openid_authority.should == '' } 
+  it('blanks out author_url')              { @comment.author_url.should == '' } 
+  it('blanks out author_email')            { @comment.author_email.should == '' } 
 end
 
 describe Comment, '.build_for_preview' do

@@ -31,7 +31,7 @@ describe PostsController do
     it_should_behave_like('successful posts list')
   
     it "should find recent posts" do
-      Post.should_receive(:find_recent).with(:tag => nil).and_return(@posts)
+      Post.should_receive(:find_recent).with(:tag => nil, :include => :tags).and_return(@posts)
       do_get
     end
   end
@@ -49,8 +49,27 @@ describe PostsController do
     it_should_behave_like('successful posts list')
 
     it "should find recent tagged posts" do
-      Post.should_receive(:find_recent).with(:tag => 'code').and_return(@posts)
+      Post.should_receive(:find_recent).with(:tag => 'code', :include => :tags).and_return(@posts)
       do_get
+    end
+  end
+  
+  describe 'handling GET to index with no posts' do
+    before(:each) do
+      @posts = []
+    end
+
+    def do_get
+      get :index
+    end
+
+    it_should_behave_like('successful posts list')
+  end
+
+  describe 'handling GET to index with invalid tag'do
+    it "returns missing" do
+      Post.stub!(:find_recent).and_return([])
+      lambda { get :index, :tag => 'bogus' }.should raise_error(ActiveRecord::RecordNotFound)
     end
   end
 
@@ -69,7 +88,7 @@ describe PostsController do
     it_should_behave_like('ATOM feed')
 
     it "should find recent posts" do
-      Post.should_receive(:find_recent).with(:tag => nil).and_return(@posts)
+      Post.should_receive(:find_recent).with(:tag => nil, :include => :tags).and_return(@posts)
       do_get
     end
   end
@@ -89,7 +108,7 @@ describe PostsController do
     it_should_behave_like('ATOM feed')
 
     it "should find recent posts" do
-      Post.should_receive(:find_recent).with(:tag => 'code').and_return(@posts)
+      Post.should_receive(:find_recent).with(:tag => 'code', :include => :tags).and_return(@posts)
       do_get
     end
   end
@@ -117,7 +136,7 @@ describe PostsController do
     end
   
     it "should find the post requested" do
-      Post.should_receive(:find_by_permalink).with('2008', '01', '01', 'a-post').and_return(@post)
+      Post.should_receive(:find_by_permalink).with('2008', '01', '01', 'a-post', :include => [:approved_comments, :tags]).and_return(@post)
       do_get
     end
   
