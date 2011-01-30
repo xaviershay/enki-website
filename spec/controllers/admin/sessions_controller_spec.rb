@@ -40,26 +40,22 @@ describe Admin::SessionsController do
 
   describe '#allow_login_bypass? when RAILS_ENV == production' do
     it 'returns false' do
-      silence_warnings { RAILS_ENV = 'production' }
+      ::Rails.stub!(:env).and_return('production')
       @controller.send(:allow_login_bypass?).should == false
-    end
-
-    after do
-      silence_warnings { RAILS_ENV = 'test' }
     end
   end
 end
 
-describe "logged in and redirected to /admin", :shared => true do
+shared_examples_for "logged in and redirected to /admin" do
   it "should set session[:logged_in]" do
     session[:logged_in].should be_true
   end
   it "should redirect to admin posts" do
     response.should be_redirect
-    response.should redirect_to('/admin/dashboard')
+    response.should redirect_to('/admin')
   end
 end
-describe "not logged in", :shared => true do
+shared_examples_for "not logged in" do
   it "should not set session[:logged_in]" do
     session[:logged_in].should be_nil
   end
@@ -78,8 +74,8 @@ describe Admin::SessionsController, "handling CREATE with post" do
   end
 
   def stub_open_id_authenticate(url, status_code, return_value)
-    status = mock("Result", :status => status_code)
-    @controller.stub!(:config).and_return(mock("config", :author_open_ids => [
+    status = mock("Result", :successful? => status_code == :successful, :message => '')
+    @controller.stub!(:enki_config).and_return(mock("enki_config", :author_open_ids => [
         "http://enkiblog.com",
         "http://secondaryopenid.com"
       ].collect {|uri| URI.parse(uri)}

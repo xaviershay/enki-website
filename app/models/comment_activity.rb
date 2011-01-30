@@ -6,7 +6,7 @@ class CommentActivity
   end
 
   def comments
-    @comments ||= post.approved_comments.find(:all, :order => 'created_at DESC', :limit => 5)
+    @comments ||= post.approved_comments.find_recent(:limit => 5)
   end
 
   def most_recent_comment
@@ -16,9 +16,10 @@ class CommentActivity
   class << self
     def find_recent
       Post.find(:all,
-        :select => 'distinct posts.*',
+        :group  => "comments.post_id, posts." + Post.column_names.join(", posts."),
+        :select => 'posts.*, max(comments.created_at), comments.post_id',
         :joins  => 'INNER JOIN comments ON comments.post_id = posts.id',
-        :order  => 'comments.created_at DESC',
+        :order  => 'max(comments.created_at) desc',
         :limit  => 5
       ).collect {|post|
         CommentActivity.new(post)

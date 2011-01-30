@@ -42,7 +42,7 @@ describe Admin::PagesController do
       assigns[:page].should == @page
     end
   end
-  
+
   describe 'handling GET to new' do
     before(:each) do
       @page = mock_model(Page)
@@ -107,7 +107,22 @@ describe Admin::PagesController do
 
     it 'is unprocessable' do
       do_put
-      response.headers['Status'].should == '422 Unprocessable Entity'
+      response.status.should == 422
     end
+  end
+end
+
+describe Admin::PagesController, 'with an AJAX request to preview' do
+  before(:each) do
+    Page.should_receive(:build_for_preview).and_return(@page = mock_model(Page))
+    session[:logged_in] = true
+    xhr :post, :preview, :page => {
+      :title        => 'My Page',
+      :body         => 'body'
+    }
+  end
+
+  it "assigns a new page for the view" do
+    assigns(:page).should == @page
   end
 end

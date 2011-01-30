@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/../../../spec_helper'
 
 describe "/admin/posts/index.html.erb" do
   after(:each) do
-    response.should be_valid_xhtml_fragment
+    rendered.should be_valid_html5_fragment
   end
 
   it 'should render' do
@@ -13,8 +13,8 @@ describe "/admin/posts/index.html.erb" do
       :slug              => 'a-post',
       :approved_comments => []
     )]
-    posts.stub!(:page_count).and_return(1)
-    assigns[:posts] = posts
-    render '/admin/posts/index.html.erb'
+    posts.stub!(:total_pages).and_return(1)
+    assign :posts, posts
+    render :template => '/admin/posts/index.html.erb'
   end
 end

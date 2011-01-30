@@ -1,5 +1,9 @@
 class CommentsController < ApplicationController
   include UrlHelper
+  OPEN_ID_ERRORS = {
+    :missing  => "Sorry, the OpenID server couldn't be found",
+    :canceled => "OpenID verification was canceled",
+    :failed   => "Sorry, the OpenID verification failed" }
 
   before_filter :find_post, :except => [:new]
 
@@ -7,10 +11,7 @@ class CommentsController < ApplicationController
     if request.post? || using_open_id?
       create
     else
-      respond_to do |format|
-        format.html { redirect_to(post_path(@post)) }
-        format.atom { @comments = @post.approved_comments }
-      end
+      redirect_to(post_path(@post))
     end
   end
 
@@ -19,11 +20,12 @@ class CommentsController < ApplicationController
 
     respond_to do |format|
       format.js do
-        render :partial => 'comment.html.erb'
+        render :partial => 'comment.html.erb', :locals => {:comment => @comment}
       end
     end
   end
 
+  # TODO: Spec OpenID with cucumber and rack-my-id
   def create
     @comment = Comment.new((session[:pending_comment] || params[:comment] || {}).reject {|key, value| !Comment.protected_attribute?(key) })
     @comment.post = @post
@@ -32,38 +34,30 @@ class CommentsController < ApplicationController
 
     if @comment.requires_openid_authentication?
       session[:pending_comment] = params[:comment]
-      return if authenticate_with_open_id(@comment.author, 
-          :optional => [:nickname, :fullname, :email]
-        ) do |result, identity_url, registration|
-
-        case result.status
-        when :missing
-          @comment.openid_error = "Sorry, the OpenID server couldn't be found"
-        when :canceled
-          @comment.openid_error = "OpenID verification was canceled"
-        when :failed
-          @comment.openid_error = "Sorry, the OpenID verification failed"
-        when :successful
+      authenticate_with_open_id(@comment.author, :optional => [:nickname, :fullname, :email]) do |result, identity_url, registration|
+        if result.status == :successful
           @comment.post = @post
 
-          @comment.author_url              = @comment.author
-          @comment.author                  = (registration["fullname"] || registration["nickname"] || @comment.author_url).to_s
-          @comment.author_email            = registration["email"].to_s
-          @comment.author_openid_authority = result.server_url 
+          @comment.author_url   = @comment.author
+          @comment.author       = (registration["fullname"] || registration["nickname"] || @comment.author_url).to_s
+          @comment.author_email = (registration["email"] || @comment.author_url).to_s
 
           @comment.openid_error = ""
+          session[:pending_comment] = nil
+        else
+          @comment.openid_error = OPEN_ID_ERRORS[ result.status ]
         end
-
-        session[:pending_comment] = nil
       end
     else
       @comment.blank_openid_fields
     end
 
-    if @comment.save
-      redirect_to post_path(@post)
-    else
-      render :template => 'posts/show'
+    unless response.headers[Rack::OpenID::AUTHENTICATE_HEADER] # OpenID gem already provided a response
+      if @comment.save
+        redirect_to post_path(@post)
+      else
+        render :template => 'posts/show'
+      end
     end
   end
 

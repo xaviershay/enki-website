@@ -42,7 +42,7 @@ describe Admin::PostsController do
       assigns[:post].should == @post
     end
   end
-  
+
   describe 'handling GET to new' do
     before(:each) do
       @post = mock_model(Post)
@@ -64,7 +64,7 @@ describe Admin::PostsController do
 
     def do_put
       session[:logged_in] = true
-      put :update, :id => 1, :post => valid_post_attributes      
+      put :update, :id => 1, :post => valid_post_attributes
     end
 
     it 'updates the post' do
@@ -101,7 +101,7 @@ describe Admin::PostsController do
 
     it 'is unprocessable' do
       do_put
-      response.headers['Status'].should == '422 Unprocessable Entity'
+      response.status.should == 422
     end
   end
 
@@ -161,9 +161,26 @@ describe Admin::PostsController do
       do_delete
     end
 
-    it("renders post as json") do
+    it("renders json including a description of the post") do
       do_delete
-      response.should have_text(/#{Regexp.escape(@post.to_json)}/)
+      JSON.parse(response.body)['undo_message'].should == 'hello'
     end
+  end
+end
+
+describe Admin::PostsController, 'with an AJAX request to preview' do
+  before(:each) do
+    Post.should_receive(:build_for_preview).and_return(@post = mock_model(Post))
+    session[:logged_in] = true
+    xhr :post, :preview, :post => {
+      :title        => 'My Post',
+      :body         => 'body',
+      :tag_list     => 'ruby',
+      :published_at => 'now'
+    }
+  end
+
+  it "assigns a new post for the view" do
+    assigns(:post).should == @post
   end
 end

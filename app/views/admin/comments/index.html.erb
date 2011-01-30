@@ -4,7 +4,7 @@
 <% end -%>
 
 <h1>Comments</h1>
-<table cellspacing="0" cellpadding="0">
+<table>
   <thead>
     <tr>
       <th>Created At</th>
@@ -14,8 +14,8 @@
       <th>Actions</th>
     </tr>
   </thead>
-	
-  <tbody> 
+
+  <tbody>
     <% if @comments.empty? -%>
       <tr><td colspan="5">There are no comments at this time.</td></tr>
     <% else -%>
@@ -24,12 +24,12 @@
   </tbody>
 
   <tfoot>
-    <% if @comments.page_count > 1 -%>
+    <% if @comments.total_pages > 1 -%>
       <tr class="pagination">
         <td colspan='5'>
-          <%= will_paginate(@comments, :prev_label => '« Newer', :next_label => 'Older »') %>
-        </td>  
-      </tr>  
-    <% end -%>  
+          <%= will_paginate(@comments, :previous_label => '« Newer', :next_label => 'Older »') %>
+        </td>
+      </tr>
+    <% end -%>
   </tfoot>
 </table>

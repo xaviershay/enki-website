@@ -27,7 +27,7 @@ class Admin::PagesController < Admin::BaseController
       end
     end
   end
-  
+
   def update
     if @page.update_attributes(params[:page])
       respond_to do |format|
@@ -55,19 +55,29 @@ class Admin::PagesController < Admin::BaseController
     @page = Page.new
   end
 
+  def preview
+    @page = Page.build_for_preview(params[:page])
+
+    respond_to do |format|
+      format.js {
+        render :partial => 'pages/page.html.erb', :locals => {:page => @page}
+      }
+    end
+  end
+
   def destroy
     undo_item = @page.destroy_with_undo
 
     respond_to do |format|
       format.html do
         flash[:notice] = "Deleted page '#{@page.title}'"
-        redirect_to :action => 'index' 
+        redirect_to :action => 'index'
       end
-      format.json { 
+      format.json {
         render :json => {
           :undo_path    => undo_admin_undo_item_path(undo_item),
           :undo_message => undo_item.description,
-          :page         => @page
+          :page         => @page.attributes
         }.to_json
       }
     end
