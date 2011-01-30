@@ -1,4 +1,6 @@
 Enki::Application.routes.draw do
+  root :to => 'pages#show', :id => 'enki'
+
   namespace 'admin' do
     resource :session
 
@@ -28,6 +30,4 @@ Enki::Application.routes.draw do
     get 'posts.:format', :as => :formatted_posts
     get '(:tag)', :as => :posts
   end
-
-  root :to => 'pages#show', :id => 'enki'
 end
