@@ -29,5 +29,5 @@ Enki::Application.routes.draw do
     get '(:tag)', :as => :posts
   end
 
-  root :to => 'posts#index'
+  root :to => 'pages#show', :id => 'enki'
 end
