@@ -1,5 +1,5 @@
 Enki::Application.routes.draw do
-  root :to => 'pages#show', :id => 'enki'
+  root :to => 'pages#show', :id => 'home'
 
   namespace 'admin' do
     resource :session
