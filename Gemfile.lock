@@ -128,4 +128,4 @@ DEPENDENCIES
   rspec-rails
   ruby-openid
   webrat
-  will_paginate (~> 3.0.pre2)
+  will_paginate (= 3.0.pre2)
