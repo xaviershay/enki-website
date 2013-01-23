@@ -7,3 +7,4 @@ db/schema.rb
 .bundle
 *.log
 mysql2psql.yml
+config/secret_token
