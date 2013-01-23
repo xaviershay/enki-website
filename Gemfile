@@ -14,10 +14,6 @@ group :assets do
   gem 'sass-rails',   '~> 3.2.3'
 end
 
-platforms :ruby do
-  gem 'sqlite3'
-end
-
 platforms :jruby do
   gem 'activerecord-jdbcsqlite3-adapter'
   gem 'trinidad'
